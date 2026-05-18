@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import user, authentication
+from .routers import user, authentication
 import models, database  # Fixed line here
 
 # Create tables on startup
