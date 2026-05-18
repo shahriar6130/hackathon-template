@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Response
 from sqlalchemy.orm import Session
-from .. import schemas, models, database
-from passlib.context import CryptContext
-from .authentication import get_current_user
+import schemas, models, database  # Clean absolute import
+from routers.authentication import get_current_user  # Clean absolute import
+import bcrypt
 
 router = APIRouter(
     tags=['users']
 )
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Signup Port
 @router.post("/users/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
@@ -20,8 +18,11 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(database.get_db)
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    print(user.password)
-    hashed_password = pwd_context.hash(user.password)
+    
+    # Clean native bcrypt implementation (Bypasses passlib error completely)
+    password_bytes = user.password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
 
     db_user = models.User(
         name=user.name,

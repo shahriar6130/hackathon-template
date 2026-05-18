@@ -1,14 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from .. import schemas, models
-from ..database import get_db
-from passlib.context import CryptContext
+import schemas, models       # Clean absolute import
+from database import get_db   # Clean absolute import
+import bcrypt                 # Native bcrypt engine
 import jwt
 from jwt.exceptions import InvalidTokenError
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
-
 
 SECRET_KEY = "c6e7a921acace6ff469ffb2c1d61b1b24529a4628f822cd0f0c4018de83eb06a"
 ALGORITHM = "HS256"
@@ -16,16 +15,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-
 router = APIRouter(
     tags=['authentication']
 )
 
-# Use passlib to hash password
-pwd_cxt = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def verify(hashed_password, plain_password):
-    return pwd_cxt.verify(plain_password, hashed_password)
+def verify(hashed_password: str, plain_password: str) -> bool:
+    """Verifies a plain password against its database hash using native bcrypt."""
+    password_bytes = plain_password.encode('utf-8')
+    hashed_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 @router.post('/login')
 def login(request: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -40,8 +38,6 @@ def login(request: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(
             detail='incorrect password'
         )
 
-    
-
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
@@ -50,9 +46,8 @@ def login(request: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(
     return {
         "access_token": access_token,
         "token_type": "bearer", 
-        "user_id": user.id  # Pass the actual ID from the database
+        "user_id": user.id  
     }
-
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()

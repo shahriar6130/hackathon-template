@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from .routers import user, authentication
-from . import models, database
 from fastapi.middleware.cors import CORSMiddleware
+from routers import user, authentication
+import models, database  # Fixed line here
 
 # Create tables on startup
 models.Base.metadata.create_all(bind=database.engine)
@@ -17,10 +17,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,        # You can use ["*"] for quick testing (not recommended for production)
-    allow_credentials=True,       # Important if you use cookies or auth later
-    allow_methods=["*"],          # Allow GET, POST, PUT, DELETE, etc.
-    allow_headers=["*"],          # Allow all headers (like Content-Type)
+    allow_origins=origins,        
+    allow_credentials=True,       
+    allow_methods=["*"],          
+    allow_headers=["*"],          
 )
 
 # Routers
