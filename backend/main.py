@@ -4,8 +4,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import user, authentication
 import models, database
 
-# Create tables on startup
-models.Base.metadata.create_all(bind=database.engine)
+# Create tables on startup - only for PostgreSQL (Supabase production)
+# Skip for SQLite (local development) since test.db is just for testing
+if "postgresql" in database.DATABASE_URL:
+    try:
+        models.Base.metadata.create_all(bind=database.engine)
+        print("✅ Tables created in Supabase")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not create tables: {e}")
+else:
+    print("ℹ️ Using SQLite - tables will be created when needed")
 
 # Initialize FastAPI app
 app = FastAPI(
